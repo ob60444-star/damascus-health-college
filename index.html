@@ -20,7 +20,7 @@
 }
 body{
     margin:0;
-    font-family:Tahoma;
+    font-family:Tahoma, sans-serif;
     background:var(--bg);
     color:var(--text);
     transition:.3s;
@@ -119,7 +119,6 @@ input,select{
     padding:10px;
     margin:5px;
     width:90%;
-    max-width:300px;
 }
 footer{
     text-align:center;
@@ -129,7 +128,9 @@ footer{
 button{
     cursor:pointer;
 }
-@media screen and (max-width:600px){
+
+/* ==== تحسين التوافق مع الشاشات الصغيرة ==== */
+@media screen and (max-width:768px){
     header{
         padding:30px 10px;
         font-size:18px;
@@ -137,14 +138,21 @@ button{
     nav ul{
         flex-direction:column;
         gap:10px;
+        align-items:flex-start;
     }
     .bigBtn{
         font-size:18px;
         padding:15px;
+        width:95%;
     }
     #lectures li{
         flex-direction:column;
         align-items:flex-start;
+        font-size:16px;
+    }
+    .card{
+        width:95%;
+        padding:15px;
     }
     .panel{
         width:95%;
@@ -152,6 +160,27 @@ button{
     }
     input,select{
         width:95%;
+        font-size:16px;
+    }
+}
+
+@media screen and (max-width:480px){
+    header{
+        padding:20px 10px;
+        font-size:16px;
+    }
+    .bigBtn{
+        font-size:16px;
+        padding:12px;
+    }
+    #lectures li{
+        font-size:14px;
+    }
+    .card{
+        padding:12px;
+    }
+    input,select{
+        font-size:14px;
     }
 }
 </style>
@@ -264,25 +293,23 @@ button{
 </footer>
 
 <script>
-// === التنقل والوضع الليلي ===
+// ======== التنقل والوضع الليلي ========
 let currentSubject = "";
 
 function showPage(id){
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById(id).classList.add("active");
 }
-
 function toggleTheme(){
     document.body.classList.toggle("dark");
 }
-
 function login(){
     const pass = document.getElementById("pass").value;
     if(pass==="admin123"){ showPage("admin"); refreshDeleteLists(); }
     else { alert("كلمة السر خاطئة!"); }
 }
 
-// === المواد ===
+// ======== المواد ========
 function loadSubjects(){
     let subs = JSON.parse(localStorage.getItem("subjects"))||[];
     let s1 = document.getElementById("subjects1");
@@ -333,23 +360,18 @@ function goBack(){
     else showPage("semester2");
 }
 
-// === المحاضرات ===
+// ======== المحاضرات ========
 function addLecture(){
     let subject = document.getElementById("lectureSubject").value;
     let title = document.getElementById("lectureTitle").value.trim();
     let num = document.getElementById("lectureNumber").value.trim();
     let file = document.getElementById("lectureFile").files[0];
-    if(!title){ alert("الرجاء إدخال اسم المحاضرة!"); return; }
-    if(!num){ alert("الرجاء إدخال رقم المحاضرة!"); return; }
-    if(!file){ alert("اختر ملف المحاضرة"); return; }
-    if(!["application/pdf","application/msword","application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type)){
-        alert("الملف يجب أن يكون PDF أو DOC/DOCX"); return;
-    }
+    if(!title || !num || !file){ alert("الرجاء تعبئة كل الحقول واختيار الملف"); return; }
     let reader = new FileReader();
     reader.onload = function(){
         let data = JSON.parse(localStorage.getItem("lectures"))||[];
         if(data.some(l=>l.title===title && l.subject===subject)){ alert("المحاضرة موجودة مسبقاً!"); return; }
-        data.push({subject:subject,title:title,number:num,file:reader.result,downloads:0});
+        data.push({subject, title, number:num, file:reader.result, downloads:0});
         localStorage.setItem("lectures",JSON.stringify(data));
         alert("تمت إضافة المحاضرة!");
         document.getElementById("lectureTitle").value="";
@@ -383,21 +405,19 @@ function loadLectures(){
 function downloadLecture(title){
     let data = JSON.parse(localStorage.getItem("lectures"))||[];
     let lec = data.find(l=>l.title==title);
-    if(confirm(`هل تريد تحميل المحاضرة "${title}"؟`)){
-        lec.downloads++;
-        localStorage.setItem("lectures", JSON.stringify(data));
-        window.open(lec.file);
-        loadLectures();
-    }
+    lec.downloads++;
+    localStorage.setItem("lectures",JSON.stringify(data));
+    window.open(lec.file);
+    loadLectures();
 }
 
-// === الأخبار ===
+// ======== الأخبار ========
 function addNews(){
     let sem = document.getElementById("newsSemester").value;
     let text = document.getElementById("newsText").value.trim();
     if(!text){ alert("لا يمكن إضافة خبر فارغ!"); return; }
     let news = JSON.parse(localStorage.getItem("news"))||[];
-    news.push({semester:sem,text:text});
+    news.push({semester:sem,text});
     localStorage.setItem("news", JSON.stringify(news));
     document.getElementById("newsText").value="";
     loadNews();
@@ -407,7 +427,6 @@ function addNews(){
 function loadNews(){
     let n1=document.getElementById("news1");
     let n2=document.getElementById("news2");
-    if(!n1||!n2) return;
     let news=JSON.parse(localStorage.getItem("news"))||[];
     news=news.filter(n=>n.text && n.text.trim()!=="");
     localStorage.setItem("news", JSON.stringify(news));
@@ -420,7 +439,7 @@ function loadNews(){
     else{ news2.forEach(n=>{ let div=document.createElement("div"); div.className="card"; div.innerHTML=n.text; n2.appendChild(div); }); }
 }
 
-// === الحذف مع التأكيد ===
+// ======== الحذف ========
 function refreshDeleteLists(){
     let subs=JSON.parse(localStorage.getItem("subjects"))||[];
     let lecs=JSON.parse(localStorage.getItem("lectures"))||[];
@@ -468,13 +487,13 @@ function deleteNewsAdmin(){
     }
 }
 
-// === البحث ===
+// ======== البحث ========
 function searchLecture(txt){
     let items=document.querySelectorAll("#lectures li");
     items.forEach(i=>{ i.style.display=i.textContent.includes(txt)?"flex":"none"; });
 }
 
-// === تحميل البيانات عند بدء الصفحة ===
+// ======== تحميل البيانات عند بدء الصفحة ========
 loadSubjects();
 loadNews();
 refreshDeleteLists();
